@@ -2761,6 +2761,41 @@ describe.sequential("wrangler dev", () => {
 		});
 	});
 
+	describe("tunnel", () => {
+		it("should pass --tunnel flag through to dev config", async () => {
+			writeWranglerConfig({
+				main: "index.js",
+				compatibility_date: "2024-01-01",
+			});
+			fs.writeFileSync("index.js", `export default {};`);
+			const config = await runWranglerUntilConfig("dev --tunnel");
+			expect(config.input.dev?.tunnel).toBe(true);
+		});
+
+		it("should default tunnel to undefined when not specified", async () => {
+			writeWranglerConfig({
+				main: "index.js",
+				compatibility_date: "2024-01-01",
+			});
+			fs.writeFileSync("index.js", `export default {};`);
+			const config = await runWranglerUntilConfig("dev");
+			expect(config.input.dev?.tunnel).toBeUndefined();
+		});
+
+		it("should error when --tunnel and --remote are both specified", async () => {
+			writeWranglerConfig({
+				main: "index.js",
+				compatibility_date: "2024-01-01",
+			});
+			fs.writeFileSync("index.js", `export default {};`);
+			await expect(
+				runWrangler("dev --tunnel --remote")
+			).rejects.toThrowErrorMatchingInlineSnapshot(
+				`[Error: --tunnel is only supported in local mode.]`
+			);
+		});
+	});
+
 	describe("multi-worker mode", () => {
 		it("should pass --env to auxiliary workers", async () => {
 			writeWranglerConfig(
