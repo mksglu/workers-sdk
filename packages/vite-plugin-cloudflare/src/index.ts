@@ -16,6 +16,7 @@ import { outputConfigPlugin } from "./plugins/output-config";
 import { previewPlugin } from "./plugins/preview";
 import { rscPlugin } from "./plugins/rsc";
 import { shortcutsPlugin } from "./plugins/shortcuts";
+import { tunnelPlugin } from "./plugins/tunnel";
 import {
 	virtualClientFallbackPlugin,
 	virtualModulesPlugin,
@@ -96,6 +97,7 @@ export function cloudflare(pluginConfig: PluginConfig = {}): vite.Plugin[] {
 		configPlugin(ctx),
 		rscPlugin(ctx),
 		devPlugin(ctx),
+		tunnelPlugin(ctx),
 		previewPlugin(ctx),
 		shortcutsPlugin(ctx),
 		debugPlugin(ctx),
