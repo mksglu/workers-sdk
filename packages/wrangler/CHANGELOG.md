@@ -1,5 +1,11 @@
 # wrangler
 
+## 4.82.0
+
+### Minor Changes
+
+- [#12983](https://github.com/cloudflare/workers-sdk/pull/12983) [`28bc2be`](https://github.com/cloudflare/workers-sdk/commit/28bc2be6c51e93aa8df75ad223435df35f1981d6) Thanks [@1000hz](https://github.com/1000hz)! - Added the `wrangler preview` command family for creating Preview deployments (currently in private beta).
+
 ## 4.81.1
 
 ### Patch Changes
