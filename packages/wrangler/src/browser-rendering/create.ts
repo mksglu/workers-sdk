@@ -21,7 +21,8 @@ export const browserCreateCommand = createCommand({
 	args: {
 		lab: {
 			type: "boolean",
-			description: "Enable lab browser session",
+			description:
+				"Enable lab browser session with experimental Chrome features",
 			default: false,
 		},
 		keepAlive: {
@@ -79,23 +80,17 @@ export const browserCreateCommand = createCommand({
 			response.targets.find((t) => t.type === "page") ?? response.targets[0];
 
 		if (json) {
-			logger.log(
-				JSON.stringify(
-					{
-						sessionId: response.sessionId,
-						target: {
-							id: pageTarget.id,
-							title: pageTarget.title,
-							url: pageTarget.url,
-							type: pageTarget.type,
-							devtoolsUrl: pageTarget.devtoolsFrontendUrl,
-							webSocketUrl: pageTarget.webSocketDebuggerUrl,
-						},
-					},
-					null,
-					2
-				)
-			);
+			logger.json({
+				sessionId: response.sessionId,
+				target: {
+					id: pageTarget.id,
+					title: pageTarget.title,
+					url: pageTarget.url,
+					type: pageTarget.type,
+					devtoolsUrl: pageTarget.devtoolsFrontendUrl,
+					webSocketUrl: pageTarget.webSocketDebuggerUrl,
+				},
+			});
 		} else {
 			logger.log(`Session created: ${response.sessionId}`);
 			if (pageTarget.devtoolsFrontendUrl) {
