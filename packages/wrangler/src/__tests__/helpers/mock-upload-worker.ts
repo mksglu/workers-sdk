@@ -1,7 +1,6 @@
 import { ParseError } from "@cloudflare/workers-utils";
 import { http, HttpResponse } from "msw";
-// eslint-disable-next-line no-restricted-imports
-import { expect } from "vitest";
+import { assert } from "vitest";
 import {
 	getSubdomainValues,
 	getSubdomainValuesAPIMock,
@@ -62,24 +61,22 @@ export function mockUploadWorkerRequest(
 ) {
 	const handleUpload: HttpResponseResolver = async ({ params, request }) => {
 		const url = new URL(request.url);
-		expect(url.hostname).toMatch(
-			options.expectedBaseUrl ?? "api.cloudflare.com"
-		);
-		expect(params.accountId).toEqual("some-account-id");
-		expect(params.scriptName).toEqual(expectedScriptName);
+		assert(url.hostname === (options.expectedBaseUrl ?? "api.cloudflare.com"));
+		assert(params.accountId === "some-account-id");
+		assert(params.scriptName === expectedScriptName);
 		if (useServiceEnvironments) {
-			expect(params.envName).toEqual(env);
+			assert(params.envName === env);
 		}
 		if (useOldUploadApi) {
-			expect(url.searchParams.get("excludeScript")).toEqual("true");
+			assert(url.searchParams.get("excludeScript") === "true");
 		}
 		if (expectedDispatchNamespace) {
-			expect(params.dispatchNamespace).toEqual(expectedDispatchNamespace);
+			assert(params.dispatchNamespace === expectedDispatchNamespace);
 		}
 
 		const formBody = await request.formData();
 		if (typeof expectedEntry === "string" || expectedEntry instanceof RegExp) {
-			expect(await serialize(formBody.get("index.js"))).toMatch(expectedEntry);
+			assert((await serialize(formBody.get("index.js"))) === expectedEntry);
 		} else if (typeof expectedEntry === "function") {
 			expectedEntry(await serialize(formBody.get("index.js")));
 		}
@@ -88,77 +85,90 @@ export function mockUploadWorkerRequest(
 		) as WorkerMetadata;
 
 		if (expectedType === "esm") {
-			expect(metadata.main_module).toEqual(expectedMainModule);
+			assert(metadata.main_module === expectedMainModule);
 		} else if (expectedType === "none") {
-			expect(metadata.main_module).toEqual(undefined);
+			assert(metadata.main_module === undefined);
 		} else {
-			expect(metadata.body_part).toEqual("index.js");
+			assert(metadata.body_part === "index.js");
 		}
 
 		if (keepVars) {
-			expect(metadata.keep_bindings).toEqual(
-				expect.arrayContaining(["plain_text", "json"])
+			assert(
+				metadata.keep_bindings &&
+					metadata.keep_bindings.length === 2 &&
+					metadata.keep_bindings.includes("plain_text") &&
+					metadata.keep_bindings.includes("json")
 			);
 		} else if (keepSecrets) {
-			expect(metadata.keep_bindings).toEqual(
-				expect.arrayContaining(["secret_text", "secret_key"])
+			assert(
+				metadata.keep_bindings &&
+					metadata.keep_bindings.length === 2 &&
+					metadata.keep_bindings.includes("secret_text") &&
+					metadata.keep_bindings.includes("secret_key")
 			);
 		} else {
-			expect(metadata.keep_bindings).toBeFalsy();
+			assert(!!metadata.keep_bindings === false);
 		}
 
 		if ("expectedBindings" in options) {
 			// Compare the provided bindings with the expected bindings, without requireing the order to match
-			expect(metadata.bindings).toEqual(
-				expect.arrayContaining(expectedBindings as unknown[])
+			assert(
+				metadata.bindings?.length === (expectedBindings as unknown[])?.length
 			);
-			expect(metadata.bindings?.length).toEqual(
-				(expectedBindings as unknown[])?.length
+			(expectedBindings as unknown[]).forEach((binding) =>
+				assert((metadata.bindings as unknown[]).includes(binding))
 			);
 		}
 		if ("expectedCompatibilityDate" in options) {
-			expect(metadata.compatibility_date).toEqual(expectedCompatibilityDate);
+			assert(metadata.compatibility_date === expectedCompatibilityDate);
 		}
 		if ("expectedCompatibilityFlags" in options) {
-			expect(metadata.compatibility_flags).toEqual(expectedCompatibilityFlags);
+			assert(
+				metadata.compatibility_flags?.length ===
+					expectedCompatibilityFlags?.length
+			);
+			metadata.compatibility_flags?.forEach((flag) => {
+				assert(expectedCompatibilityFlags?.includes(flag));
+			});
 		}
 		if ("expectedMigrations" in options) {
-			expect(metadata.migrations).toEqual(expectedMigrations);
+			assert(metadata.migrations === expectedMigrations);
 		}
 		if ("expectedTailConsumers" in options) {
-			expect(metadata.tail_consumers).toEqual(expectedTailConsumers);
+			assert(metadata.tail_consumers === expectedTailConsumers);
 		}
 		if ("expectedCapnpSchema" in options) {
-			expect(
-				await serialize(formBody.get(metadata.capnp_schema ?? ""))
-			).toEqual(expectedCapnpSchema);
+			assert(
+				(await serialize(formBody.get(metadata.capnp_schema ?? ""))) ===
+					expectedCapnpSchema
+			);
 		}
 		if ("expectedLimits" in options) {
-			expect(metadata.limits).toEqual(expectedLimits);
+			assert(metadata.limits === expectedLimits);
 		}
 		if ("expectedAssets" in options) {
-			expect(metadata.assets).toEqual(expectedAssets);
+			assert(metadata.assets === expectedAssets);
 		}
 		if ("expectedObservability" in options) {
-			expect(metadata.observability).toEqual(expectedObservability);
+			assert(metadata.observability === expectedObservability);
 		}
 		if ("expectedContainers" in options) {
-			expect(metadata.containers).toEqual(expectedContainers);
+			assert(metadata.containers === expectedContainers);
 		}
 		if ("expectedAnnotations" in options) {
-			expect(metadata.annotations).toEqual(expectedAnnotations);
+			assert(metadata.annotations === expectedAnnotations);
 		}
 
 		if (expectedUnsafeMetaData !== undefined) {
 			Object.keys(expectedUnsafeMetaData).forEach((key) => {
-				expect(metadata[key]).toEqual(expectedUnsafeMetaData[key]);
+				assert(metadata[key] === expectedUnsafeMetaData[key]);
 			});
 		}
 		for (const [name, content] of Object.entries(expectedModules)) {
-			expect(await serialize(formBody.get(name))).toEqual(content);
+			assert((await serialize(formBody.get(name))) === content);
 		}
 		for (const name of excludedModules) {
-			expect(formBody.get(name)).toBeNull();
+			assert(formBody.get(name) === null);
 		}
 
 		if (useOldUploadApi) {
@@ -257,8 +267,9 @@ export function mockUploadWorkerRequest(
 						const body = (await request.json()) as {
 							annotations?: { "workers/message"?: string };
 						};
-						expect(body.annotations?.["workers/message"]).toEqual(
-							expectedDeploymentMessage
+						assert(
+							body.annotations?.["workers/message"] ===
+								expectedDeploymentMessage
 						);
 					}
 					return HttpResponse.json(createFetchResult({ id: "Deployment-ID" }));
@@ -270,7 +281,7 @@ export function mockUploadWorkerRequest(
 					const body = await request.json();
 
 					if ("expectedSettingsPatch" in options) {
-						expect(body).toEqual(expectedSettingsPatch);
+						assert(body === expectedSettingsPatch);
 					}
 
 					return HttpResponse.json(createFetchResult({}));

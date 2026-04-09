@@ -1,7 +1,5 @@
 import prompts from "prompts";
-// eslint-disable-next-line no-restricted-imports
-import { expect } from "vitest";
-import type { Mock } from "vitest";
+import { assert, type Mock } from "vitest";
 
 /**
  * The expected values for a confirmation request.
@@ -26,13 +24,11 @@ export function mockConfirm(...expectations: ConfirmExpectation[]) {
 	for (const expectation of expectations) {
 		(prompts as unknown as Mock).mockImplementationOnce(
 			({ type, name, message, initial }) => {
-				expect({ type, name, message }).toStrictEqual({
-					type: "confirm",
-					name: "value",
-					message: expectation.text,
-				});
+				assert(type === "confirm");
+				assert(name === "value");
+				assert(message === expectation.text);
 				if (expectation.options) {
-					expect(initial).toStrictEqual(expectation.options?.defaultValue);
+					assert(initial === expectation.options?.defaultValue);
 				}
 
 				return Promise.resolve({ value: expectation.result });
@@ -67,15 +63,13 @@ export function mockPrompt(...expectations: PromptExpectation[]) {
 	for (const expectation of expectations) {
 		(prompts as unknown as Mock).mockImplementationOnce(
 			({ type, name, message, initial, style }) => {
-				expect({ type, name, message }).toStrictEqual({
-					type: "text",
-					name: "value",
-					message: expectation.text,
-				});
+				assert(type === "text");
+				assert(name === "value");
+				assert(message === expectation.text);
 				if (expectation.options) {
-					expect(initial).toStrictEqual(expectation.options?.defaultValue);
-					expect(style).toStrictEqual(
-						expectation.options?.isSecret ? "password" : "default"
+					assert(initial === expectation.options?.defaultValue);
+					assert(
+						style === (expectation.options?.isSecret ? "password" : "default")
 					);
 				}
 				return Promise.resolve({ value: expectation.result });
@@ -119,14 +113,12 @@ export function mockSelect<Values>(
 	for (const expectation of expectations) {
 		(prompts as unknown as Mock).mockImplementationOnce(
 			({ type, name, message, choices, initial }) => {
-				expect({ type, name, message }).toStrictEqual({
-					type: "select",
-					name: "value",
-					message: expectation.text,
-				});
+				assert(type === "select");
+				assert(name === "value");
+				assert(message === expectation.text);
 				if (expectation.options) {
-					expect(choices).toStrictEqual(expectation.options?.choices);
-					expect(initial).toStrictEqual(expectation.options?.defaultOption);
+					assert(choices === expectation.options?.choices);
+					assert(initial === expectation.options?.defaultOption);
 				}
 				return Promise.resolve({ value: expectation.result });
 			}
@@ -135,8 +127,14 @@ export function mockSelect<Values>(
 }
 
 export function clearDialogs() {
-	// No dialog mocks should be left after each test, and so calling the dialog methods should throw
-	expect(() => prompts({ type: "select", name: "unknown" })).toThrow(
-		"Unexpected call to "
-	);
+	let error: Error | undefined;
+	try {
+		// No dialog mocks should be left after each test, and so calling the dialog methods should throw
+		void prompts({ type: "select", name: "unknown" });
+	} catch (e) {
+		assert(e instanceof Error);
+		error = e;
+	}
+	assert(error);
+	assert(error.message.startsWith("Unexpected call to "));
 }
